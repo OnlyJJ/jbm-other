@@ -2,12 +2,14 @@ package com.lm.jbm.utils;
 
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.lm.jbm.thread.LoginThread;
 
 public class RandomUtil {
+	
+	public static ConcurrentHashMap<String, String> ipMap = new ConcurrentHashMap<String, String>(512);
 	
 	public static final String[] ips = {
 		"120.15.129.116",
@@ -337,8 +339,8 @@ public class RandomUtil {
 	};
 	
 	public static String getUserIp(String userId) {
-		if(LoginThread.ipMap.containsKey(userId)) {
-			return LoginThread.ipMap.get(userId);
+		if(ipMap.containsKey(userId)) {
+			return ipMap.get(userId);
 		}
 		return getIp();
 	}

@@ -7,16 +7,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang.StringUtils;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.lm.jbm.thread.GrapBoxThread;
-import com.lm.jbm.thread.GrapRebThread;
-import com.lm.jbm.thread.LoginThread;
-import com.lm.jbm.thread.PeachThread;
-import com.lm.jbm.thread.ThreadManager;
 import com.lm.jbm.utils.DateUtil;
 import com.lm.jbm.utils.HttpUtils;
 import com.lm.jbm.utils.JsonUtil;
@@ -25,14 +21,11 @@ import com.lm.jbm.utils.RandomUtil;
 
 
 public class JmService {
-	
+	public static ConcurrentHashMap<String, String> serssionMap = new ConcurrentHashMap<String, String>(512);
 	public static final String U1 = PropertiesUtil.getValue("U1");
 	public static final String U9 = PropertiesUtil.getValue("U9");
 	public static final String U15 = PropertiesUtil.getValue("U15");
 	public static final String U16 = PropertiesUtil.getValue("U16");
-	public static final String U32 = PropertiesUtil.getValue("U32");
-	public static final String G48 = PropertiesUtil.getValue("G48");
-	public static final String U53 = PropertiesUtil.getValue("U53");
 	public static final String U84 = PropertiesUtil.getValue("U84");
 
 	public static String login(String userId, String pwd, String ip) {
@@ -61,7 +54,7 @@ public class JmService {
 		return null;
 	}
 	
-	public static int findOnline(String roomId) {
+	public static int findOnline(String roomId) throws Exception{
 		try {
 			JSONObject json = new JSONObject();
 			JSONObject roomonlineinfo = new JSONObject();
@@ -84,6 +77,11 @@ public class JmService {
 					}
 					if(total >0) {
 						if(data.containsKey("onlineuserinfo")) {
+							String[] configs = RandomUtil.getUserIds();
+							List<String> userids = null;
+							if(configs != null && configs.length >0) {
+								userids = Arrays.asList(configs);
+							}
 							JSONArray array = JsonUtil.strToJSONArray(data.getString("onlineuserinfo"));
 							if(array != null && array.size() >0) {
 								int size = array.size();
@@ -92,6 +90,9 @@ public class JmService {
 									String userId = obj.getString("a");
 									if(userId.indexOf("robot") != -1 || userId.indexOf("pesudo") != -1) {
 										break;
+									}
+									if(userids != null && userids.contains(userId)) {
+										continue;
 									}
 									real++;
 								}
@@ -104,8 +105,8 @@ public class JmService {
 			return real;
 		} catch(Exception e) {
 			System.err.println(e.getMessage());
+			throw new Exception("查询房间信息错误，退出当前循环!");
 		}
-		return 0;
 	}
 
 	public static String inRoom(String roomId, String userId) {
@@ -144,200 +145,14 @@ public class JmService {
 		return null;
 	}
 	
-	public static String pluck(String roomId, String userId, String sessionId, String ip) {
-		try {
-			JSONObject json = new JSONObject();
-			JSONObject session = new JSONObject();
-			session.put("b", sessionId);
-			
-			JSONObject userbaseinfo = new JSONObject();
-			userbaseinfo.put("a", userId);
-			userbaseinfo.put("j", ip);
-			
-			JSONObject peachvo = new JSONObject();
-			peachvo.put("b", roomId);
-			json.put("session", session);
-			json.put("userbaseinfo", userbaseinfo);
-			json.put("peachvo", peachvo);
-			
-			String str = json.toString();
-			String res = HttpUtils.post3(U53, str, ip);
-			if(StringUtils.isNotEmpty(res)) {
-				JSONObject data = JsonUtil.strToJsonObject(res);
-				if(data != null && data.containsKey("peachvo")) {
-					JSONObject peachvoJson = JsonUtil.strToJsonObject(data.getString("peachvo"));
-					int num = peachvoJson.getIntValue("l");
-					String name = peachvoJson.getString("m");
-					StringBuilder msg = new StringBuilder();
-					msg.append(userId).append("摘到：").append(name).append("X").append(num).append("个");
-					System.err.println(msg.toString());
-					return msg.toString();
-				}
-			}
-		} catch(Exception e) {
-			System.err.println(e.getMessage());
-		}
-		return "";
-	}
 	
-	public static void peach(String roomId) {
-		try {
-			String[] userIds = RandomUtil.getUserIds();
-			List<String> list = Arrays.asList(userIds);
-			Collections.shuffle(list);
-			int index = 1;
-			int real = findOnline(roomId);
-//			int conf = Integer.parseInt(PropertiesUtil.getValue("real_count"));
-//			if(real < conf) {
-//				Thread.sleep(1000);
-//			}
-			for(int i=0; i<userIds.length; i++) {
-				if(real >= 50) {
-					if(index > 6) {
-						return;
-					}
-				} else {
-					if(index > RandomUtil.getTotal()) {
-						return;
-					}
-				}
-				String userId = list.get(i);
-				PeachThread peach = new PeachThread(roomId, userId, real);
-				ThreadManager.getInstance().execute(peach);
-				index++;
-			}
-		} catch(Exception e) {
-			System.err.println(e.getMessage());
-		}
-	}
 	
-	public static void grapReb(String userId, String sessionId, String rebId, String ip) {
-		try {
-			JSONObject json = new JSONObject();
-			JSONObject session = new JSONObject();
-			session.put("b", sessionId);
-			
-			JSONObject userbaseinfo = new JSONObject();
-			userbaseinfo.put("a", userId);
-			userbaseinfo.put("j", ip);
-			
-			JSONObject redpacketsendvo = new JSONObject();
-			redpacketsendvo.put("a", rebId);
-			
-			json.put("session", session);
-			json.put("userbaseinfo", userbaseinfo);
-			json.put("redpacketsendvo", redpacketsendvo);
-			
-			String str = json.toString();
-			String res = HttpUtils.post3(U32, str, ip);
-			if(StringUtils.isNotEmpty(res)) {
-				JSONObject data = JsonUtil.strToJsonObject(res);
-				if(data != null && data.containsKey("redpacketreceivevo")) {
-					JSONObject peachvoJson = JsonUtil.strToJsonObject(data.getString("redpacketreceivevo"));
-					int gold = peachvoJson.getIntValue("d");
-					StringBuilder msg = new StringBuilder();
-					msg.append(userId).append("抢红包，抢到：").append("X").append(gold).append("个金币");
-					System.err.println(msg.toString());
-				}
-			}
-		} catch(Exception e) {
-			System.err.println("抢红包异常！");
-		}
-	}
-	
-	public static void grapReb(String rebId) {
-		try {
-			String[] userIds = RandomUtil.getUserIds();
-			List<String> list = Arrays.asList(userIds);
-			Collections.shuffle(list);
-			int index = 1;
-			for(int i=0; i<userIds.length; i++) {
-				if(index > 2) {
-					return;
-				}
-				String userId = list.get(i);
-				GrapRebThread peach = new GrapRebThread(rebId, userId);
-				ThreadManager.getInstance().execute(peach);
-				index++;
-			}
-		} catch(Exception e) {
-			System.err.println(e.getMessage());
-		}
-	}
-	
-	public static void grapBox(String roomId) {
-		try {
-			String[] userIds = RandomUtil.getUserIds();
-			List<String> list = Arrays.asList(userIds);
-			Collections.shuffle(list);
-			int index = 1;
-			int way = 1;
-			int real = findOnline(roomId);
-			int conf = Integer.parseInt(PropertiesUtil.getValue("real_count"));
-			if(real < conf) {
-				Thread.sleep(1000);
-				way = 0;
-			}
-			for(int i=0; i<userIds.length; i++) {
-				if(index > 20) {
-					return;
-				}
-				String userId = list.get(i);
-				GrapBoxThread box = new GrapBoxThread(roomId, userId, way);
-				ThreadManager.getInstance().execute(box);
-				index++;
-			}
-		} catch(Exception e) {
-			System.err.println(e.getMessage());
-		}
-	}
-	
-	public static void grapBox(String roomId, String sessionId, String userId, String ip) {
-		try {
-			if(StringUtils.isEmpty(sessionId)) {
-				sessionId = login(userId, RandomUtil.getPwd(), ip);
-			}
-			JSONObject json = new JSONObject();
-			JSONObject session = new JSONObject();
-			session.put("b", sessionId);
-			
-			JSONObject userbaseinfo = new JSONObject();
-			userbaseinfo.put("a", userId);
-			userbaseinfo.put("j", ip);
-			
-			JSONObject anchorinfo = new JSONObject();
-			anchorinfo.put("b", roomId);
-			
-			json.put("session", session);
-			json.put("userbaseinfo", userbaseinfo);
-			json.put("anchorinfo", anchorinfo);
-			
-			JSONObject grabboxvo = new JSONObject();
-			grabboxvo.put("b", sessionId);
-			json.put("grabboxvo", grabboxvo);
-			String str = json.toString();
-			String res = HttpUtils.post3(G48, str, ip);
-			if(StringUtils.isNotEmpty(res)) {
-				JSONObject data = JsonUtil.strToJsonObject(res);
-				if(data != null && data.containsKey("grabboxvo")) {
-					JSONObject ret = JsonUtil.strToJsonObject(data.getString("grabboxvo"));
-					int num = ret.getIntValue("h");
-					String name = ret.getString("f");
-					StringBuilder msg = new StringBuilder();
-					msg.append(userId).append("抢宝箱，抢到：").append(name).append("X").append(num).append("个");
-					System.err.println(msg.toString());
-				}
-			}
-		} catch(Exception e) {
-			System.err.println("抢宝箱异常！");
-		}
-	}
 	
 	public static boolean checkFreeTime() {
 		try {
 			Date now = new Date();
-			String str1 = DateUtil.format2Str(now, "yyyy-MM-dd") + " 01:00:00";
-			String str2 = DateUtil.format2Str(now, "yyyy-MM-dd") + " 10:30:00";
+			String str1 = DateUtil.format2Str(now, "yyyy-MM-dd") + " 23:00:00";
+			String str2 = DateUtil.format2Str(now, "yyyy-MM-dd") + " 23:55:00";
 			Date d = DateUtil.parse(str1, "yyyy-MM-dd HH:mm:ss");
 			Date d2 = DateUtil.parse(str2, "yyyy-MM-dd HH:mm:ss");
 			if(now.after(d) && now.before(d2)) {
@@ -348,12 +163,24 @@ public class JmService {
 		return false;
 	}
 	
-	public static void sendGift(String userId) {
-		try {
+	public static void sendGift(String[] userIds) throws Exception {
+		if(userIds == null || userIds.length <=0) {
+			return;
+		}
+//		if(!checkFreeTime()) {
+//			System.err.println("不在送礼时间范围内，不处理！");
+//			return;
+//		}
+		String roomId = PropertiesUtil.getValue("gift_roomId");
+		String anchorId = PropertiesUtil.getValue("gift_room_userId");
+		for(String userId : userIds) {
 			String ip = RandomUtil.getUserIp(userId);
-			String sessionId = LoginThread.serssionMap.get(userId);
+			String sessionId = serssionMap.get(userId);
 			if(StringUtils.isEmpty(sessionId)) {
 				sessionId = login(userId, RandomUtil.getPwd(), ip);
+				if(StringUtils.isNotEmpty(sessionId)) {
+					serssionMap.put(userId, sessionId);
+				}
 			}
 			JSONObject json = new JSONObject();
 			JSONObject session = new JSONObject();
@@ -366,7 +193,11 @@ public class JmService {
 			json.put("session", session);
 			json.put("userbaseinfo", userbaseinfo);
 			
-			String bag = HttpUtils.post3(U84, json.toString(), ip);
+			// 加入房间
+			inRoom(roomId, userId);
+			// 获取背包
+			String bag = HttpUtils.post3(U84, json.toString(), ip); 
+			
 			Map<String, Object> gifts = null;
 			if(StringUtils.isNotEmpty(bag)) {
 				JSONObject bagData = JsonUtil.strToJsonObject(bag);
@@ -386,23 +217,40 @@ public class JmService {
 			}
 			// 送礼
 			if(gifts != null && gifts.size() >0) {
-				String roomId = PropertiesUtil.getValue("gift_roomId");
-				String anchorId = PropertiesUtil.getValue("gift_room_userId");
 				JSONObject anchorinfo = new JSONObject();
 				anchorinfo.put("a", anchorId);
 				anchorinfo.put("b", roomId);
+				int sleep = 1;
 				for(String key : gifts.keySet()) {
 					int number = (Integer) gifts.get(key);
 					int giftId = Integer.parseInt(key);
-					
-					for(int i=0;i<100;i++) {
+					while(true) {
 						if(number <= 0) {
-							continue;
+							break;
 						}
-						int num = 5;
+						// 判断下成员
+						try {
+							int online = findOnline(roomId);
+							if(online > 0) {
+								break;
+							}
+						} catch(Exception e) {
+							System.err.println(e.getMessage());
+							break;
+						}
+						sleep++;
+						if(sleep % 20 == 0) {
+							Thread.sleep(10000);
+						} else {
+							Thread.sleep(1000);
+						}
+						int num = 10;
 						int ran = RandomUtil.getRandom(0, 10);
-						if(ran % 2 == 0) {
-							num = 10;
+						if(ran % 2 == 0 && number > 100) {
+							num = 100;
+						}
+						if(number <= 10) {
+							num = 1;
 						}
 						number -= num;
 						
@@ -421,18 +269,17 @@ public class JmService {
 							if(data != null && data.containsKey("result")) {
 								JSONObject ret = JsonUtil.strToJsonObject(data.getString("result"));
 								String msg = ret.getString("b");
-								System.err.println(msg);
-								if(msg.toLowerCase().equals("success")) {
+								if(!msg.toLowerCase().equals("success")) {
 									break;
 								}
+								System.err.println("送礼成功!");
 							}
 						}
-						Thread.sleep(5000);
 					}
 				}
-			}
-		} catch(Exception e) {
-			System.err.println("送礼异常！");
+			} 
+			// 退出房间
+			outRoom(roomId, userId);
 		}
 	}
 }
