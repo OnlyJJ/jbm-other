@@ -54,7 +54,7 @@ public class JmService {
 		return null;
 	}
 	
-	public static int findOnline(String roomId) throws Exception{
+	public static int findOnline(String roomId, String anchorId) throws Exception{
 		try {
 			JSONObject json = new JSONObject();
 			JSONObject roomonlineinfo = new JSONObject();
@@ -90,6 +90,9 @@ public class JmService {
 									String userId = obj.getString("a");
 									if(userId.indexOf("robot") != -1 || userId.indexOf("pesudo") != -1) {
 										break;
+									}
+									if(anchorId.equals(userId)) {
+										continue;
 									}
 									if(userids != null && userids.contains(userId)) {
 										continue;
@@ -230,7 +233,7 @@ public class JmService {
 						}
 						// 判断下成员
 						try {
-							int online = findOnline(roomId);
+							int online = findOnline(roomId, anchorId);
 							if(online > 0) {
 								break;
 							}
