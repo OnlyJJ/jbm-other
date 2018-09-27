@@ -82,19 +82,28 @@ public class JmService {
 							if(configs != null && configs.length >0) {
 								userids = Arrays.asList(configs);
 							}
+							List<String> watchIds = null;
+							String ids = PropertiesUtil.getValue("watchIds");
+							if(StringUtils.isNotEmpty(ids)) {
+								String[] wids = ids.split(",");
+								watchIds = Arrays.asList(wids);
+							}
 							JSONArray array = JsonUtil.strToJSONArray(data.getString("onlineuserinfo"));
 							if(array != null && array.size() >0) {
 								int size = array.size();
 								for(int i=0; i<size; i++) {
 									JSONObject obj = array.getJSONObject(i);
 									String userId = obj.getString("a");
-									if(userId.indexOf("robot") != -1 || userId.indexOf("pesudo") != -1) {
-										break;
+									if(userId.indexOf("robot") != -1) {
+										continue;
 									}
 									if(anchorId.equals(userId)) {
 										continue;
 									}
 									if(userids != null && userids.contains(userId)) {
+										continue;
+									}
+									if(watchIds != null && watchIds.contains(userId)) {
 										continue;
 									}
 									real++;
@@ -104,7 +113,7 @@ public class JmService {
 					}
 				}
 			}
-			System.err.println("房间：" + roomId + "，当前真实用户数：" + real);
+			System.err.println("房间：" + roomId + "，当前真实用户+游客数：" + real);
 			return real;
 		} catch(Exception e) {
 			System.err.println(e.getMessage());
@@ -176,6 +185,7 @@ public class JmService {
 //		}
 		String roomId = PropertiesUtil.getValue("gift_roomId");
 		String anchorId = PropertiesUtil.getValue("gift_room_userId");
+		boolean boxgift = PropertiesUtil.getValue("boxgift").equals("0") ? true : false;
 		for(String userId : userIds) {
 			String ip = RandomUtil.getUserIp(userId);
 			String sessionId = serssionMap.get(userId);
@@ -212,6 +222,11 @@ public class JmService {
 						for(int i=0; i<size; i++ ) {
 							JSONObject giftVo = array.getJSONObject(i);
 							int giftId = giftVo.getIntValue("a");
+							if(boxgift) {
+								if(giftId == 294) {
+									continue;
+								}
+							}
 							int number = giftVo.getIntValue("b");
 							gifts.put(String.valueOf(giftId), number);
 						}
