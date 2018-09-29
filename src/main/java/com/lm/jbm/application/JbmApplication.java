@@ -2,11 +2,9 @@ package com.lm.jbm.application;
 
 
 
-import com.lm.jbm.service.JmService;
 import com.lm.jbm.thread.SendGiftThread;
 import com.lm.jbm.thread.ThreadManager;
 import com.lm.jbm.utils.PropertiesUtil;
-
 
 
 public class JbmApplication {
