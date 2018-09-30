@@ -188,6 +188,16 @@ public class JmService {
 //			System.err.println("不在送礼时间范围内，不处理！");
 //			return;
 //		}
+		int day = DateUtil.getDay();
+		if(day % 2 == 0) { // 双号送背包
+			sendGiftPack(userIds);
+		} else { // 单号送金币
+			SendGiftByGoldThread t = new SendGiftByGoldThread();
+			ThreadManager.getInstance().execute(t);
+		}
+	}
+	
+	public static void sendGiftPack(String[] userIds) throws Exception {
 		String roomId = PropertiesUtil.getValue("gift_roomId");
 		String anchorId = PropertiesUtil.getValue("gift_room_userId");
 		boolean boxgift = PropertiesUtil.getValue("boxgift").equals("0") ? true : false;
@@ -304,11 +314,7 @@ public class JmService {
 			// 退出房间
 			outRoom(roomId, userId);
 		}
-		// 从背包中送礼完毕，再送金币礼物
-		SendGiftByGoldThread t = new SendGiftByGoldThread();
-		ThreadManager.getInstance().execute(t);
 	}
-	
 	
 	
 	public static void sendGiftByGold(String[] userIds) throws Exception {

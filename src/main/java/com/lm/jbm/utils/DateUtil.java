@@ -1,6 +1,7 @@
 package com.lm.jbm.utils;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 
 public class DateUtil {
@@ -15,4 +16,9 @@ public class DateUtil {
 		return sdf.parse(dateStr);
 	}
 	
+	public static int getDay() {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(new Date());
+		return cal.get(Calendar.DAY_OF_MONTH);
+	}
 }
