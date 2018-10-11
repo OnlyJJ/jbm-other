@@ -1,6 +1,7 @@
 package com.lm.jbm.service;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -27,9 +28,13 @@ public class JmService {
 	public static ConcurrentHashMap<String, Object> userMap = new ConcurrentHashMap<String, Object>(512);
 	
 	public static final String U1 = PropertiesUtil.getValue("U1");
+	public static final String U7 = PropertiesUtil.getValue("U7");
+	public static final String U8 = PropertiesUtil.getValue("U8");
 	public static final String U9 = PropertiesUtil.getValue("U9");
 	public static final String U15 = PropertiesUtil.getValue("U15");
 	public static final String U16 = PropertiesUtil.getValue("U16");
+	public static final String U19 = PropertiesUtil.getValue("U19");
+	public static final String U24 = PropertiesUtil.getValue("U24");
 	public static final String U66 = PropertiesUtil.getValue("U66");
 	public static final String U84 = PropertiesUtil.getValue("U84");
 
@@ -223,6 +228,10 @@ public class JmService {
 			
 			// 加入房间
 			inRoom(roomId, userId);
+			// 关注主播
+			attention(json, ip, roomId, anchorId, userId);
+			// 免费礼物
+			sendFree(ip, roomId, anchorId, userId, sessionId);
 			// 获取背包
 			String bag = HttpUtils.post3(U84, json.toString(), ip); 
 			
@@ -317,6 +326,7 @@ public class JmService {
 	}
 	
 	
+	
 	public static void sendGiftByGold(String[] userIds) throws Exception {
 		if(userIds == null || userIds.length <=0) {
 			return;
@@ -349,6 +359,13 @@ public class JmService {
 			
 			// 加入房间
 			inRoom(roomId, userId);
+			
+			// 关注主播
+			attention(json, ip, roomId, anchorId, userId);
+			
+			// 免费礼物
+			sendFree(ip, roomId, anchorId, userId, sessionId);
+			
 			// 获取金币
 			String bag = HttpUtils.post3(U66, json.toString(), ip); 
 			
@@ -435,5 +452,107 @@ public class JmService {
 	public static int getGiftRandom() {
 		int[] giftIds = {138,140,143,138,140,143,138,140,143,138,140,143};
 		return giftIds[new Random().nextInt(giftIds.length)];
+	}
+	
+	/**
+	 * 关注主播
+	 * @author Shao.x
+	 * @date 2018年10月11日
+	 * @param json
+	 * @param ip
+	 * @param roomId
+	 * @param userId
+	 */
+	private static void attention(JSONObject json, String ip, String roomId, String anchorId, String userId) {
+		// 获取关注列表
+		try {
+			JSONObject aten = json;
+			JSONObject page = new JSONObject();
+			page.put("b", "1");
+			page.put("c", "2000");
+			aten.put("page", page);
+			List<String> attenList = new ArrayList<String>();
+			String attention = HttpUtils.post3(U7, aten.toString(), ip); 
+			if(StringUtils.isNotEmpty(attention)) {
+				JSONObject attenData = JsonUtil.strToJsonObject(attention);
+				if(attenData != null && attenData.containsKey("data")) {
+					JSONArray array = JsonUtil.strToJSONArray(attenData.getString("data"));
+					if(array!= null && array.size() >0) {
+						int size = array.size();
+						for(int i=0; i<size; i++ ) {
+							JSONObject vo = array.getJSONObject(i);
+							String uid = vo.getString("b");
+							if(StringUtils.isNotEmpty(uid)) {
+								attenList.add(uid);
+							}
+						}
+					}
+				}
+			}
+			if(!attenList.contains(roomId)) {
+				System.err.println("未关注主播，先关注：userId：" + userId);
+				JSONObject at = json;
+				JSONObject anchorinfo = new JSONObject();
+				anchorinfo.put("a", anchorId);
+				anchorinfo.put("j", 1);
+				at.put("anchorinfo", anchorinfo);
+				HttpUtils.post3(U8, at.toString(), ip); 
+			}
+		} catch(Exception e) {
+			
+		}
+	}
+	
+	
+	
+	private static void sendFree(String ip, String roomId, String anchorId, String userId, String sessionId) {
+		// 获取关注列表
+		try {
+			JSONObject json = new JSONObject();
+			JSONObject anchorinfo = new JSONObject();
+			anchorinfo.put("a", anchorId);
+			
+			JSONObject userbaseinfo = new JSONObject();
+			userbaseinfo.put("a", userId);
+			
+			JSONObject session = new JSONObject();
+			session.put("b", sessionId);
+			
+			json.put("anchorinfo", anchorinfo);
+			json.put("userbaseinfo", userbaseinfo);
+			json.put("session", anchorinfo);
+			
+			String res = HttpUtils.post3(U19, json.toString(), ip); 
+			if(StringUtils.isNotEmpty(res)) {
+				JSONObject data = JsonUtil.strToJsonObject(res);
+				if(data != null && data.containsKey("onlineuserinfo")) {
+					JSONObject vo = JsonUtil.strToJsonObject(data.getString("onlineuserinfo"));
+					if(vo!= null) {
+						int num = vo.getIntValue("i");
+						if(num >0) {
+							JSONObject anchorinfo1 = new JSONObject();
+							anchorinfo1.put("b", roomId);
+							JSONObject freegiftupdateinfo = new JSONObject();
+							freegiftupdateinfo.put("a", "1");
+							freegiftupdateinfo.put("c", anchorId);
+							
+							JSONObject param = new JSONObject();
+							param.put("anchorinfo", anchorinfo1);
+							param.put("freegiftupdateinfo", freegiftupdateinfo);
+							param.put("userbaseinfo", userbaseinfo);
+							param.put("session", session);
+							
+							for(int i=0;i<num;i++) {
+								System.err.println("免费茄子送一波：userId：" + userId);
+								HttpUtils.post3(U24, param.toString(), ip); 
+								Thread.sleep(1000);
+							}
+						}
+					}
+				}
+			}
+		} catch(Exception e) {
+			
+		}
 	}
 }
