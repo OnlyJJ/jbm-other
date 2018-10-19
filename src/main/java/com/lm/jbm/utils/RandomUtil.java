@@ -358,6 +358,15 @@ public class RandomUtil {
 		}
 		return null;
 	}
+	
+	public static String[] getGoldUserIds() {
+		String userId = PropertiesUtil.getValue("goldUserId");
+		if(StringUtils.isNotEmpty(userId)) {
+			String[] userIds = userId.split(",");
+			return userIds;
+		}
+		return null;
+	}
 
 	public static String getUserId() {
 		String userId = PropertiesUtil.getValue("userId");

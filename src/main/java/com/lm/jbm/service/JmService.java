@@ -64,7 +64,7 @@ public class JmService {
 		return null;
 	}
 	
-	public static int findOnline(String roomId, String anchorId) throws Exception{
+	public static int findOnline(String roomId, String anchorId, String[] configs) throws Exception{
 		try {
 			JSONObject json = new JSONObject();
 			JSONObject roomonlineinfo = new JSONObject();
@@ -87,7 +87,6 @@ public class JmService {
 					}
 					if(total >0) {
 						if(data.containsKey("onlineuserinfo")) {
-							String[] configs = RandomUtil.getUserIds();
 							List<String> userids = null;
 							if(configs != null && configs.length >0) {
 								userids = Arrays.asList(configs);
@@ -272,7 +271,7 @@ public class JmService {
 						}
 						// 判断下成员
 						try {
-							int online = findOnline(roomId, anchorId);
+							int online = findOnline(roomId, anchorId, userIds);
 							if(online > 0) {
 								break;
 							}
@@ -359,13 +358,13 @@ public class JmService {
 			
 			// 加入房间
 			inRoom(roomId, userId);
-			
+			Thread.sleep(2000);
 			// 关注主播
 			attention(json, ip, roomId, anchorId, userId);
-			
+			Thread.sleep(2000);
 			// 免费礼物
 			sendFree(ip, roomId, anchorId, userId, sessionId);
-			
+			Thread.sleep(2000);
 			// 获取金币
 			String bag = HttpUtils.post3(U66, json.toString(), ip); 
 			
@@ -386,7 +385,7 @@ public class JmService {
 							}
 							// 判断下成员
 							try {
-								int online = findOnline(roomId, anchorId);
+								int online = findOnline(roomId, anchorId, userIds);
 								if(online > 0) {
 									break;
 								}
@@ -552,7 +551,7 @@ public class JmService {
 				}
 			}
 		} catch(Exception e) {
-			
+			System.err.println("送茄子失败：" + userId);
 		}
 	}
 }

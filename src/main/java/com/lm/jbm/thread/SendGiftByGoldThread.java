@@ -15,7 +15,7 @@ public class SendGiftByGoldThread implements Runnable {
 
 	public void run() {
 		try {
-			String[] userIds = RandomUtil.getUserIds();
+			String[] userIds = RandomUtil.getGoldUserIds();
 			JmService.sendGiftByGold(userIds);
 		} catch (Exception e) {
 			System.err.println("批量送礼异常，退出!");
