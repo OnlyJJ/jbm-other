@@ -37,6 +37,7 @@ public class JmService {
 	public static final String U24 = PropertiesUtil.getValue("U24");
 	public static final String U66 = PropertiesUtil.getValue("U66");
 	public static final String U84 = PropertiesUtil.getValue("U84");
+	public static final String IP = "192.168.200.16";
 
 	public static String login(String userId, String pwd, String ip) {
 		try {
@@ -141,7 +142,7 @@ public class JmService {
 			roomonlineinfo.put("c", onlineUserInfo);
 			json.put("roomonlineinfo", roomonlineinfo);
 			String str = json.toString();
-			return HttpUtils.post(U16, str);
+			return HttpUtils.post3(U16, str, IP);
 		} catch(Exception e) {
 			System.err.println(e.getMessage());
 		}
@@ -159,7 +160,7 @@ public class JmService {
 			roomonlineinfo.put("c", onlineUserInfo);
 			json.put("roomonlineinfo", roomonlineinfo);
 			String str = json.toString();
-			return HttpUtils.post(U16, str);
+			return HttpUtils.post3(U16, str, IP);
 		} catch(Exception e) {
 			System.err.println(e.getMessage());
 		}
@@ -193,12 +194,12 @@ public class JmService {
 //			return;
 //		}
 		int day = DateUtil.getDay();
-		if(day % 2 == 0) { // 双号送背包
+//		if(day % 2 == 0) { // 双号送背包
 			sendGiftPack(userIds);
-		} else { // 单号送金币
+//		} else { // 单号送金币
 			SendGiftByGoldThread t = new SendGiftByGoldThread();
 			ThreadManager.getInstance().execute(t);
-		}
+//		}
 	}
 	
 	public static void sendGiftPack(String[] userIds) throws Exception {
@@ -285,14 +286,14 @@ public class JmService {
 						} else {
 							Thread.sleep(1000);
 						}
-						int num = 10;
-						int ran = RandomUtil.getRandom(0, 10);
-						if(ran % 2 == 0 && number > 100) {
+						int num = 1;
+						if(number >= 100) {
 							num = 100;
-						}
-						if(number <= 10) {
-							num = 1;
-						}
+						} else if(number >= 66) {
+							num = 66;
+						} else if(number >= 10) {
+							num = 10;
+						} 
 						number -= num;
 						
 						JSONObject gift = new JSONObject();
@@ -404,18 +405,14 @@ public class JmService {
 							if(giftId == 143) {
 								singleGold = 500;
 							}
-							int num = 10;
-							int ran = RandomUtil.getRandom(0, 10);
-							if(ran % 2 == 0 && gold >= 100 * singleGold) {
+							int num = 1;
+							if(gold >= 100 * singleGold) {
 								num = 100;
-							}
-							if(gold >= 10 * singleGold && gold < 100 * singleGold) {
+							} else if(gold >= 66 * singleGold) {
+								num = 66;
+							} else if(gold >= 10 * singleGold) {
 								num = 10;
-							} else if(gold >= 5 * singleGold && gold < 10 * singleGold) {
-								num = 5;
-							} else if(gold <5 * singleGold) {
-								num = 1;
-							}
+							} 
 							gold -= num*singleGold;
 							
 							JSONObject gift = new JSONObject();
