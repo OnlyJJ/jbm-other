@@ -351,7 +351,7 @@ public class RandomUtil {
 	}
 	
 	public static String[] getUserIds() {
-		String userId = PropertiesUtil.getValue("userId");
+		String userId = PropertiesUtil.getValue("userIdForGift");
 		if(StringUtils.isNotEmpty(userId)) {
 			String[] userIds = userId.split(",");
 			return userIds;
@@ -360,7 +360,7 @@ public class RandomUtil {
 	}
 	
 	public static String[] getGoldUserIds() {
-		String userId = PropertiesUtil.getValue("goldUserId");
+		String userId = PropertiesUtil.getValue("userIdForGold");
 		if(StringUtils.isNotEmpty(userId)) {
 			String[] userIds = userId.split(",");
 			return userIds;

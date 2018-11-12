@@ -203,8 +203,8 @@ public class JmService {
 	}
 	
 	public static void sendGiftPack(String[] userIds) throws Exception {
-		String roomId = PropertiesUtil.getValue("gift_roomId");
-		String anchorId = PropertiesUtil.getValue("gift_room_userId");
+		String roomId = PropertiesUtil.getValue("roomId");
+		String anchorId = PropertiesUtil.getValue("anchorId");
 		boolean boxgift = PropertiesUtil.getValue("boxgift").equals("0") ? true : false;
 		for(String userId : userIds) {
 			String ip = RandomUtil.getUserIp(userId);
@@ -335,8 +335,8 @@ public class JmService {
 //			System.err.println("不在送礼时间范围内，不处理！");
 //			return;
 //		}
-		String roomId = PropertiesUtil.getValue("gift_roomId");
-		String anchorId = PropertiesUtil.getValue("gift_room_userId");
+		String roomId = PropertiesUtil.getValue("roomId");
+		String anchorId = PropertiesUtil.getValue("anchorId");
 		for(String userId : userIds) {
 			String ip = RandomUtil.getUserIp(userId);
 			String sessionId = serssionMap.get(userId);
